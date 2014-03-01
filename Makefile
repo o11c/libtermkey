@@ -28,6 +28,9 @@ else ifeq ($(shell pkg-config tinfo && echo 1),1)
 else ifeq ($(shell pkg-config ncursesw && echo 1),1)
   CFLAGS +=$(shell pkg-config --cflags ncursesw)
   LDFLAGS+=$(shell pkg-config --libs   ncursesw)
+else ifeq ($(shell pkg-config ncurses && echo 1),1)
+  CFLAGS +=$(shell pkg-config --cflags ncurses)
+  LDFLAGS+=$(shell pkg-config --libs   ncurses)
 else
   LDFLAGS+=-lncurses
 endif
