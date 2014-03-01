@@ -6,3 +6,4 @@ Description: Abstract terminal key input library
 Version: @VERSION@
 Libs: -L${libdir} -ltermkey
 Cflags: -I${includedir}
+Requires.private: @TERMINFO_PACKAGE@

@@ -22,17 +22,23 @@ endif
 ifeq ($(shell pkg-config --atleast-version=0.1.0 unibilium && echo 1),1)
   CFLAGS +=$(shell pkg-config --cflags unibilium) -DHAVE_UNIBILIUM
   LDFLAGS+=$(shell pkg-config --libs   unibilium)
+  TERMINFO_PACKAGE = unibilium
 else ifeq ($(shell pkg-config tinfo && echo 1),1)
   CFLAGS +=$(shell pkg-config --cflags tinfo)
   LDFLAGS+=$(shell pkg-config --libs   tinfo)
+  TERMINFO_PACKAGE = tinfo
 else ifeq ($(shell pkg-config ncursesw && echo 1),1)
   CFLAGS +=$(shell pkg-config --cflags ncursesw)
   LDFLAGS+=$(shell pkg-config --libs   ncursesw)
+  TERMINFO_PACKAGE = ncursesw
 else ifeq ($(shell pkg-config ncurses && echo 1),1)
   CFLAGS +=$(shell pkg-config --cflags ncurses)
   LDFLAGS+=$(shell pkg-config --libs   ncurses)
+  TERMINFO_PACKAGE = ncurses
 else
   LDFLAGS+=-lncurses
+  # pkg-config probably not installed, but still shipping it
+  TERMINFO_PACKAGE = ncurses
 endif
 
 OBJECTS=termkey.lo driver-csi.lo driver-ti.lo
@@ -111,7 +117,7 @@ install-inc: termkey.h
 	install -d $(DESTDIR)$(INCDIR)
 	install -m644 termkey.h $(DESTDIR)$(INCDIR)
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
-	sed "s,@LIBDIR@,$(LIBDIR),;s,@INCDIR@,$(INCDIR)," <termkey.pc.in >$(DESTDIR)$(LIBDIR)/pkgconfig/termkey.pc
+	sed "s,@LIBDIR@,$(LIBDIR),;s,@INCDIR@,$(INCDIR),;s,@TERMINFO_PACKAGE@,$(TERMINFO_PACKAGE)," <termkey.pc.in >$(DESTDIR)$(LIBDIR)/pkgconfig/termkey.pc
 
 install-lib: $(LIBRARY)
 	install -d $(DESTDIR)$(LIBDIR)
