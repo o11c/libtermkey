@@ -180,7 +180,7 @@ static TermKeyResult handle_csi_m(TermKey *tk, TermKeyKey *key, int cmd, long *a
     key->modifiers     = (key->code.mouse[0] & 0x1c) >> 2;
     key->code.mouse[0] &= ~0x1c;
 
-    termkey_key_set_linecol(key, arg[1], arg[2]);
+    termkey_key_set_linecol(key, arg[2], arg[1]);
 
     return TERMKEY_RES_KEY;
   }
@@ -192,7 +192,7 @@ static TermKeyResult handle_csi_m(TermKey *tk, TermKeyKey *key, int cmd, long *a
     key->modifiers     = (key->code.mouse[0] & 0x1c) >> 2;
     key->code.mouse[0] &= ~0x1c;
 
-    termkey_key_set_linecol(key, arg[1], arg[2]);
+    termkey_key_set_linecol(key, arg[2], arg[1]);
 
     if(cmd == 'm') // release
       key->code.mouse[3] |= 0x80;
@@ -256,6 +256,35 @@ TermKeyResult termkey_interpret_mouse(TermKey *tk, const TermKeyKey *key, TermKe
   return TERMKEY_RES_KEY;
 }
 
+void termkey_construct_mouse(TermKey *tk, TermKeyKey *key, TermKeyMouseEvent event, int button, int line, int col)
+{
+  key->type = TERMKEY_TYPE_MOUSE;
+
+  termkey_key_set_linecol(key, line, col);
+
+  key->code.mouse[0] = 0;
+  switch (button)
+  {
+  case 1:
+  case 2:
+  case 3:
+    key->code.mouse[0] = button - 1;
+    break;
+  case 4:
+  case 5:
+    key->code.mouse[0] = button - 4 + 64;
+    break;
+  default:
+    key->code.mouse[0] = 66;
+    break;
+  }
+
+  if (event == TERMKEY_MOUSE_DRAG)
+    key->code.mouse[0] |= 0x20;
+  if (event == TERMKEY_MOUSE_RELEASE)
+    key->code.mouse[3] |= 0x80;
+}
+
 /*
  * Handler for CSI ? R position reports
  * A plain CSI R with no arguments is probably actually <F3>
@@ -269,7 +298,7 @@ static TermKeyResult handle_csi_R(TermKey *tk, TermKeyKey *key, int cmd, long *a
         return TERMKEY_RES_NONE;
 
       key->type = TERMKEY_TYPE_POSITION;
-      termkey_key_set_linecol(key, arg[1], arg[0]);
+      termkey_key_set_linecol(key, arg[0], arg[1]);
       return TERMKEY_RES_KEY;
 
     default:
@@ -285,6 +314,13 @@ TermKeyResult termkey_interpret_position(TermKey *tk, const TermKeyKey *key, int
   termkey_key_get_linecol(key, line, col);
 
   return TERMKEY_RES_KEY;
+}
+
+void termkey_construct_position(TermKey *tk, TermKeyKey *key, int line, int col)
+{
+  key->type = TERMKEY_TYPE_POSITION;
+
+  termkey_key_set_linecol(key, line, col);
 }
 
 /*
@@ -326,6 +362,18 @@ TermKeyResult termkey_interpret_modereport(TermKey *tk, const TermKeyKey *key, i
     *value = key->code.mouse[3];
 
   return TERMKEY_RES_KEY;
+}
+
+void termkey_construct_modereport(TermKey *tk, TermKeyKey *key, int initial, int mode, int value)
+{
+  key->type = TERMKEY_TYPE_MODEREPORT;
+
+  key->code.mouse[0] = initial;
+
+  key->code.mouse[1] = mode >> 8;
+  key->code.mouse[2] = mode & 0xff;
+
+  key->code.mouse[3] = value;
 }
 
 #define CHARAT(i) (tk->buffer[tk->buffstart + (i)])
@@ -376,7 +424,7 @@ static TermKeyResult parse_csi(TermKey *tk, size_t introlen, size_t *csi_len, lo
       present = 0;
       argi++;
 
-      if(argi > 16)
+      if(argi > *nargs)
         break;
     }
     else if(c >= 0x20 && c <= 0x2f) {

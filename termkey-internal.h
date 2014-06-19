@@ -77,15 +77,15 @@ static inline void termkey_key_get_linecol(const TermKeyKey *key, int *line, int
 
 static inline void termkey_key_set_linecol(TermKeyKey *key, int line, int col)
 {
-  if(line > 0xfff)
-    line = 0xfff;
+  if(col > 0xfff)
+    col = 0xfff;
 
-  if(col > 0x7ff)
-    col = 0x7ff;
+  if(line > 0x7ff)
+    line = 0x7ff;
 
-  key->code.mouse[1] = (line & 0x0ff);
-  key->code.mouse[2] = (col & 0x0ff);
-  key->code.mouse[3] = (line & 0xf00) >> 8 | (col & 0x300) >> 4;
+  key->code.mouse[1] = (col & 0x0ff);
+  key->code.mouse[2] = (line & 0x0ff);
+  key->code.mouse[3] = (col & 0xf00) >> 8 | (line & 0x300) >> 4;
 }
 
 extern struct TermKeyDriver termkey_driver_csi;
